@@ -1,0 +1,181 @@
+apiVersion: newide.studio.dataleap.volc/v1
+kind: Pipeline
+metadata:
+  name: 11_PL_CHILD_Publish_Fanout
+spec:
+  displayName: 11_PL_CHILD_Publish_Fanout
+  description: ''
+  runAs: AssumedRole/135595346
+  trigger:
+    type: MANUAL
+    frequency: daily
+    cronExpression: 00 00 * * *
+    priority: d5
+  activities:
+    - name: copy_data_to_PG
+      type: for_each
+      items: '{{pTargetSystems}}'
+      concurrency: 1
+      activities:
+        - name: Copy_to_PG
+          type: dts_batch
+          source: WORKSPACE
+          engineType: dts_batch
+          path: >-
+            /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/11_PL_CHILD_Publish_Fanout/2.1_Copy_To_Postgres_Queue.copydata.json
+          position:
+            x: -320
+            'y': -20
+          dependsOn:
+            activities:
+              - name: If_Source_PG_Ready
+                outcome: true
+        - name: Copy_to_MSSQL
+          type: dts_batch
+          source: WORKSPACE
+          engineType: dts_batch
+          path: >-
+            /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/11_PL_CHILD_Publish_Fanout/2.3_Copy_To_MySQL.copydata.json
+          position:
+            x: -320
+            'y': 130
+          dependsOn:
+            activities:
+              - name: If_Source_PG_Ready_copy
+                outcome: true
+        - name: If_Source_PG_Ready
+          type: if_condition
+          condition:
+            type: BINARY_OP
+            left: '{{items.each}}'
+            op: EQUAL_TO
+            right: PG
+          position:
+            x: -630
+            'y': -20
+        - name: If_Source_PG_Ready_copy
+          type: if_condition
+          condition:
+            type: BINARY_OP
+            left: '{{items.each}}'
+            op: EQUAL_TO
+            right: MSSQL
+          position:
+            x: -630
+            'y': 130
+      position:
+        x: -240
+        'y': -90
+      dependsOn:
+        activities:
+          - name: New_Job_1
+    - name: Until_Dispatch_Complete
+      type: notebook
+      source: WORKSPACE
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/11_PL_CHILD_Publish_Fanout/3_Until_Dispatch_Complete.ipynb
+      kernelType: python_kubernetes
+      engineQueue: ''
+      computingResourceGroupName: dmp_compute
+      computingResourceGroupId: 1513
+      sparkConf: []
+      executeParam:
+        image:
+          imageUrl: >-
+            dataleap-cn-beijing.cr.volces.com/studio/notebook_runtime:python-3-12
+        cpuCores: 1
+        memoryMb: 4096
+      parameters: []
+      resources: []
+      position:
+        x: 90
+        'y': -90
+      dependsOn:
+        activities:
+          - name: copy_data_to_PG
+    - name: Delete_Landing_Folder_Housekeeping
+      type: notebook
+      source: WORKSPACE
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/11_PL_CHILD_Publish_Fanout/4_Delete_Landing_Folder_Housekeeping.ipynb
+      kernelType: emr_serverless_spark_python
+      engineQueue: dmp_emr_queue-Default
+      computingResourceGroupName: dmp_compute
+      computingResourceGroupId: 1513
+      sparkConf:
+        - key: serverless.spark.access.key
+          value: '{{ak}}'
+        - key: serverless.spark.secret.key
+          value: '{{sk}}'
+      executeParam:
+        image:
+          imageUrl: >-
+            emr-serverless-online-cn-beijing.cr.volces.com/emr-serverless-spark/spark:3.5.1-py3.12-ubuntu20.04-802
+        cpuCores: 1
+        memoryMb: 4096
+      parameters: []
+      resources: []
+      position:
+        x: 380
+        'y': -90
+      dependsOn:
+        activities:
+          - name: Until_Dispatch_Complete
+    - name: New_Job_1
+      type: set_variable
+      variableType: PIPELINE_INNER
+      variableName: pTargetSystems
+      value:
+        rawValue: '["PG","MSSQL"]'
+        calculateValue:
+          op: ''
+          left: ''
+          right: ''
+      outputVariables: []
+      position:
+        x: -550
+        'y': -90
+    - name: Validation_Curated_File_Exists
+      type: notebook
+      source: WORKSPACE
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/11_PL_CHILD_Publish_Fanout/5_Validation_Curated_File_Exists.ipynb
+      kernelType: emr_serverless_spark_python
+      engineQueue: dmp_emr_queue-Default
+      computingResourceGroupName: dmp_compute
+      computingResourceGroupId: 1513
+      sparkConf:
+        - key: serverless.spark.access.key
+          value: '{{ak}}'
+        - key: serverless.spark.secret.key
+          value: '{{sk}}'
+      executeParam:
+        image:
+          imageUrl: >-
+            emr-serverless-online-cn-beijing.cr.volces.com/emr-serverless-spark/spark:3.5.1-py3.12-ubuntu20.04-802
+        cpuCores: 1
+        memoryMb: 4096
+      parameters: []
+      resources: []
+      position:
+        x: 680
+        'y': -90
+      dependsOn:
+        activities:
+          - name: Delete_Landing_Folder_Housekeeping
+  schedulingResourceGroupName: dmp_schedule
+  schedulingResourceGroupId: 1514
+  dependsOn:
+    pipelines: []
+    self:
+      enabled: false
+  parameters:
+    - name: pRunId
+      default: '1'
+    - name: pRunDate
+      default: ${DATE}
+    - name: pTargetSystems
+      default: PG,MSSQL
+  variables:
+    - name: pTargetSystems
+      default: PG,MSSQL

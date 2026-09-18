@@ -1,0 +1,45 @@
+apiVersion: newide.studio.dataleap.volc/v1
+kind: Pipeline
+metadata:
+  name: load_prod_data
+spec:
+  displayName: load_prod_data
+  description: ''
+  runAs: AssumedRole/135592168
+  trigger:
+    type: MANUAL
+    frequency: daily
+    cronExpression: 27 00 * * *
+    priority: d5
+    pauseStatus: UNPAUSED
+  activities:
+    - name: load_event_data
+      type: notebook
+      source: WORKSPACE
+      path: /Workspace/Shared/lht-dataleap-dmp/notebooks/load_data_from_prod.ipynb
+      kernelType: emr_serverless_spark_python
+      engineQueue: dmp_emr_queue-Default
+      computingResourceGroupName: dmp_compute
+      computingResourceGroupId: 1513
+      sparkConf:
+        - key: serverless.spark.access.key
+          value: '{{ak}}'
+        - key: serverless.spark.secret.key
+          value: '{{sk}}'
+      executeParam:
+        image:
+          imageUrl: >-
+            emr-serverless-online-cn-beijing.cr.volces.com/emr-serverless-spark/spark:3.5.1-py3.12-ubuntu20.04-802
+        cpuCores: 1
+        memoryMb: 4096
+      parameters: []
+      resources: []
+      position:
+        x: -20
+        'y': 20
+  schedulingResourceGroupName: dmp_schedule
+  schedulingResourceGroupId: 1515
+  dependsOn:
+    pipelines: []
+    self:
+      enabled: false

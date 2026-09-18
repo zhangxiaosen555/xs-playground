@@ -1,0 +1,68 @@
+apiVersion: newide.studio.dataleap.volc/v1
+kind: Pipeline
+metadata:
+  name: delta_or_full_load
+spec:
+  displayName: delta_or_full_load
+  description: ''
+  runAs: AssumedRole/135595346
+  trigger:
+    type: SCHEDULED
+    frequency: daily
+    cronExpression: 22 00 * * *
+    priority: d5
+  activities:
+    - name: if_fullload
+      type: if_condition
+      condition:
+        type: BINARY_OP
+        left: '{{ifFullload}}'
+        op: EQUAL_TO
+        right: 'true'
+      position:
+        x: -430
+        'y': -170
+    - name: act_2_1_Copy_SQL_to_Blob_ServiceSignal_all
+      type: dts_batch
+      source: WORKSPACE
+      engineType: dts_batch
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/09_Execute_CHILD_Extract_And_Stage/2_1_Copy_SQL_to_Blob_ServiceSignal_all.copydata.json
+      position:
+        x: 10
+        'y': -320
+      dependsOn:
+        activities:
+          - name: if_fullload
+            outcome: true
+      retryPolicy:
+        minRetryIntervalSeconds: 300
+        maxRetries: 3
+        retryOnTimeout: false
+    - name: act_2_2_Copy_SQL_to_Blob_ServiceSignal_delta
+      type: dts_batch
+      source: WORKSPACE
+      engineType: dts_batch
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/09_Execute_CHILD_Extract_And_Stage/2_2_Copy_SQL_to_Blob_ServiceSignal_delta.copydata.json
+      position:
+        x: 10
+        'y': -40
+      dependsOn:
+        activities:
+          - name: if_fullload
+            outcome: false
+      retryPolicy:
+        maxRetries: 3
+        minRetryIntervalSeconds: 300
+  schedulingResourceGroupName: dmp_schedule
+  schedulingResourceGroupId: 1514
+  dependsOn:
+    pipelines: []
+    self:
+      enabled: false
+  parameters:
+    - name: ifFullload
+      default: 'true'
+    - name: load_DATE
+      default: ${DATE}

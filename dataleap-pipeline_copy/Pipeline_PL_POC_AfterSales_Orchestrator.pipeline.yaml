@@ -1,0 +1,289 @@
+apiVersion: newide.studio.dataleap.volc/v1
+kind: Pipeline
+metadata:
+  name: Pipeline_PL_POC_AfterSales_Orchestrator
+spec:
+  displayName: Pipeline_PL_POC_AfterSales_Orchestrator
+  description: ''
+  runAs: AssumedRole/135595346
+  trigger:
+    type: MANUAL
+    frequency: daily
+    cronExpression: 47 00 * * *
+    priority: d5
+    pauseStatus: UNPAUSED
+  activities:
+    - name: Execute_CHILD_Extract_And_Stage
+      type: execute_pipeline
+      pipelineName: 9_Execute_CHILD_Extract_And_Stage
+      pipelineParameterValues:
+        ifFullload: '{{pFullLoad}}'
+        load_DATE: '{{pRunDate}}'
+      waitingSuccess: true
+      bizDate: ${DATETIME}
+      position:
+        x: 810
+        'y': 160
+      dependsOn:
+        activities:
+          - name: GetMetadata_And_If_Landing_Exists_Delete
+      pipelineId: Pipeline_Execute_CHILD_Extract_And_Stage
+      parameterValues: {}
+    - name: Execute_CHILD_Transform_And_Curate
+      type: execute_pipeline
+      pipelineName: 10_Execute_CHILD_Transform_And_Curate
+      pipelineParameterValues: {}
+      waitingSuccess: true
+      bizDate: ${DATETIME}
+      position:
+        x: 1120
+        'y': 160
+      dependsOn:
+        activities:
+          - name: Execute_CHILD_Extract_And_Stage
+      pipelineId: 10_Execute_CHILD_Transform_And_Curate
+    - name: PL_CHILD_Publish_Fanout
+      type: execute_pipeline
+      pipelineName: 11_PL_CHILD_Publish_Fanout
+      pipelineParameterValues: {}
+      waitingSuccess: true
+      bizDate: ${DATETIME}
+      position:
+        x: 1440
+        'y': 160
+      dependsOn:
+        activities:
+          - name: Execute_CHILD_Transform_And_Curate
+      pipelineId: 11_PL_CHILD_Publish_Fanout
+    - name: Web_Start_Callback
+      type: notebook
+      source: WORKSPACE
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/02_Web_Start_Callback.ipynb
+      kernelType: python_kubernetes
+      engineQueue: ''
+      computingResourceGroupName: dmp_compute
+      sparkConf: []
+      executeParam:
+        image:
+          imageUrl: >-
+            dataleap-cn-beijing.cr.volces.com/studio/notebook_runtime:python-3-12
+        cpuCores: 1
+        memoryMb: 4096
+      parameters: []
+      resources: []
+      position:
+        x: -860
+        'y': -90
+      dependsOn:
+        activities:
+          - name: Set_vRunId_
+      computingResourceGroupId: 1513
+      description: done
+    - name: Wait_10s
+      type: notebook
+      source: WORKSPACE
+      path: /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/03_Wait_10s.ipynb
+      kernelType: python_kubernetes
+      engineQueue: ''
+      computingResourceGroupName: dmp_compute
+      sparkConf: []
+      executeParam:
+        image:
+          imageUrl: >-
+            dataleap-cn-beijing.cr.volces.com/studio/notebook_runtime:python-3-12
+        cpuCores: 1
+        memoryMb: 4096
+      parameters: []
+      resources: []
+      position:
+        x: -510
+        'y': -90
+      dependsOn:
+        activities:
+          - name: Web_Start_Callback
+      computingResourceGroupId: 1513
+      description: done
+    - name: Lookup_Watermark
+      type: notebook
+      source: WORKSPACE
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/04_Lookup_Watermark.ipynb
+      kernelType: emr_serverless_spark_python
+      engineQueue: dmp_emr_queue-Default
+      computingResourceGroupName: dmp_compute
+      sparkConf:
+        - key: serverless.spark.access.key
+          value: '{{ak}}'
+        - key: serverless.spark.secret.key
+          value: '{{sk}}'
+      executeParam:
+        image:
+          imageUrl: >-
+            emr-serverless-online-cn-beijing.cr.volces.com/emr-serverless-spark/spark:3.5.1-py3.12-ubuntu20.04-802
+        cpuCores: 1
+        memoryMb: 4096
+      parameters: []
+      resources: []
+      position:
+        x: -170
+        'y': -90
+      dependsOn:
+        activities:
+          - name: Wait_10s
+      computingResourceGroupId: 1513
+      description: done
+    - name: Set_vWatermark
+      type: set_variable
+      variableType: PIPELINE_INNER
+      variableName: vWatermark
+      value:
+        rawValue: '{{activity(Lookup_Watermark).output.cells["1"]}}'
+        calculateValue:
+          op: ''
+          left: ''
+          right: ''
+      outputVariables: []
+      position:
+        x: 150
+        'y': -90
+      dependsOn:
+        activities:
+          - name: Lookup_Watermark
+      description: done
+    - name: GetMetadata_And_If_Landing_Exists_Delete
+      type: notebook
+      source: WORKSPACE
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/06_07_08_GetMetadata_And_If_Landing_Exists_Delete.ipynb
+      kernelType: emr_serverless_spark_python
+      engineQueue: dmp_emr_queue-Default
+      computingResourceGroupName: dmp_compute
+      sparkConf:
+        - key: serverless.spark.access.key
+          value: '{{ak}}'
+        - key: serverless.spark.secret.key
+          value: '{{sk}}'
+      executeParam:
+        image:
+          imageUrl: >-
+            emr-serverless-online-cn-beijing.cr.volces.com/emr-serverless-spark/spark:3.5.1-py3.12-ubuntu20.04-802
+        cpuCores: 1
+        memoryMb: 4096
+      parameters: []
+      resources: []
+      position:
+        x: 460
+        'y': -90
+      dependsOn:
+        activities:
+          - name: Set_vWatermark
+      computingResourceGroupId: 1513
+      description: >-
+        原Demo 中的功能：按指定目录前缀列出所有文件 → 批量删除该目录下全部文件。当前Demo 用Hive 表替代，用的表名:
+        dts_test.tos_service_signal_stg
+    - name: SP_Audit_Finalize
+      type: notebook
+      source: WORKSPACE
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/12_SP_Audit_Finalize.ipynb
+      kernelType: emr_serverless_spark_python
+      engineQueue: dmp_emr_queue-Default
+      computingResourceGroupName: dmp_compute
+      sparkConf:
+        - key: serverless.spark.access.key
+          value: '{{ak}}'
+        - key: serverless.spark.secret.key
+          value: '{{sk}}'
+      executeParam:
+        image:
+          imageUrl: >-
+            emr-serverless-online-cn-beijing.cr.volces.com/emr-serverless-spark/spark:3.5.1-py3.12-ubuntu20.04-802
+        cpuCores: 1
+        memoryMb: 4096
+      parameters: []
+      resources: []
+      position:
+        x: 1740
+        'y': 390
+      dependsOn:
+        activities:
+          - name: PL_CHILD_Publish_Fanout
+      computingResourceGroupId: 1513
+      description: done
+    - name: Web_End_Callback
+      type: notebook
+      source: WORKSPACE
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/13_Web_End_Callback.ipynb
+      kernelType: python_kubernetes
+      engineQueue: ''
+      computingResourceGroupName: dmp_compute
+      sparkConf: []
+      executeParam:
+        image:
+          imageUrl: >-
+            dataleap-cn-beijing.cr.volces.com/studio/notebook_runtime:python-3-12
+        cpuCores: 1
+        memoryMb: 4096
+      parameters: []
+      resources: []
+      position:
+        x: 2040
+        'y': 390
+      dependsOn:
+        activities:
+          - name: SP_Audit_Finalize
+      computingResourceGroupId: 1513
+      description: 有报错
+    - name: Set_vRunId_plus_1
+      type: set_variable
+      variableType: PIPELINE_INNER
+      variableName: vRunId
+      value:
+        rawValue: ''
+        calculateValue:
+          op: PLUS
+          left: '{{vRunId}}'
+          right: '1'
+      outputVariables: []
+      position:
+        x: -1500
+        'y': -90
+    - name: Set_vRunId_
+      type: set_variable
+      variableType: PIPELINE_INNER
+      variableName: vRunIdT
+      value:
+        rawValue: ''
+        calculateValue:
+          op: CONCAT
+          left: ${DATETIME}
+          right: _R{{vRunId}}
+      outputVariables: []
+      position:
+        x: -1170
+        'y': -90
+      dependsOn:
+        activities:
+          - name: Set_vRunId_plus_1
+  schedulingResourceGroupName: dmp_schedule
+  schedulingResourceGroupId: 1514
+  dependsOn:
+    pipelines: []
+    self:
+      enabled: false
+  parameters:
+    - name: output
+      default: '0'
+    - name: pRunDate
+      default: ${DATE}
+    - name: pFullLoad
+      default: 'true'
+  variables:
+    - name: vRunId
+      default: '0'
+    - name: vRunIdT
+      default: 2020-01-02_R0
+    - name: vWatermark
+      default: '2020-01-02 00:00:00'

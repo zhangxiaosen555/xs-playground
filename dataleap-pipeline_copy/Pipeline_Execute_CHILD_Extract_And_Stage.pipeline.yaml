@@ -1,0 +1,160 @@
+apiVersion: newide.studio.dataleap.volc/v1
+kind: Pipeline
+metadata:
+  name: Pipeline_Execute_CHILD_Extract_And_Stage
+spec:
+  displayName: 9_Execute_CHILD_Extract_And_Stage
+  description: ''
+  runAs: AssumedRole/135595346
+  trigger:
+    type: MANUAL
+    frequency: daily
+    cronExpression: 00 00 * * *
+    priority: d5
+  activities:
+    - name: act_4_Validation_Landing_Files
+      type: notebook
+      source: WORKSPACE
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/09_Execute_CHILD_Extract_And_Stage/4_Validation_Landing_Files.ipynb
+      kernelType: emr_serverless_spark_python
+      engineQueue: dmp_emr_queue-Default
+      computingResourceGroupName: dmp_compute
+      computingResourceGroupId: 1513
+      sparkConf:
+        - key: serverless.spark.access.key
+          value: '{{ak}}'
+        - value: '{{sk}}'
+          key: serverless.spark.secret.key
+      executeParam:
+        image:
+          imageUrl: >-
+            emr-serverless-online-cn-beijing.cr.volces.com/emr-serverless-spark/spark:3.5.1-py3.12-ubuntu20.04-802
+        cpuCores: 1
+        memoryMb: 4096
+      parameters: []
+      resources: []
+      position:
+        x: 870
+        'y': -50
+      dependsOn:
+        activities:
+          - name: act_2_3_Copy_PG_to_Blob_DealerFeedback
+          - name: act_2_3_Copy_PG_to_Blob_DealerFeedback
+          - name: act_2_0_Copy_SQL_to_Blob_ServiceSignal
+    - name: act_2_3_Copy_PG_to_Blob_DealerFeedback
+      type: dts_batch
+      source: WORKSPACE
+      engineType: dts_batch
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/09_Execute_CHILD_Extract_And_Stage/2_3_Copy_PG_to_Blob_DealerFeedback.copydata.json
+      position:
+        x: -30
+        'y': 90
+      retryPolicy:
+        maxRetries: 3
+        minRetryIntervalSeconds: 300
+    - name: act_5_1_dmp_poc_ods_service_signal_stg
+      type: notebook
+      source: WORKSPACE
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/09_Execute_CHILD_Extract_And_Stage/5_1_dmp_poc_ods.service_signal_stg.ipynb
+      kernelType: emr_serverless_spark_python
+      engineQueue: dmp_emr_queue-Default
+      computingResourceGroupName: dmp_compute
+      computingResourceGroupId: 1513
+      sparkConf:
+        - key: serverless.spark.access.key
+          value: '{{ak}}'
+        - value: '{{sk}}'
+          key: serverless.spark.secret.key
+      executeParam:
+        image:
+          imageUrl: >-
+            emr-serverless-online-cn-beijing.cr.volces.com/emr-serverless-spark/spark:3.5.1-py3.12-ubuntu20.04-802
+        cpuCores: 1
+        memoryMb: 4096
+      parameters: []
+      resources: []
+      position:
+        x: 1190
+        'y': -270
+      dependsOn:
+        activities:
+          - name: act_4_Validation_Landing_Files
+    - name: act_5_2_dmp_poc_ods_dealer_feedback
+      type: notebook
+      source: WORKSPACE
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/09_Execute_CHILD_Extract_And_Stage/5_2_dmp_poc_ods.dealer_feedback.ipynb
+      kernelType: emr_serverless_spark_python
+      engineQueue: dmp_emr_queue-Default
+      computingResourceGroupName: dmp_compute
+      computingResourceGroupId: 1513
+      sparkConf:
+        - key: serverless.spark.access.key
+          value: '{{ak}}'
+        - value: '{{sk}}'
+          key: serverless.spark.secret.key
+      executeParam:
+        image:
+          imageUrl: >-
+            emr-serverless-online-cn-beijing.cr.volces.com/emr-serverless-spark/spark:3.5.1-py3.12-ubuntu20.04-802
+        cpuCores: 1
+        memoryMb: 4096
+      parameters: []
+      resources: []
+      position:
+        x: 1190
+        'y': 90
+      dependsOn:
+        activities:
+          - name: act_4_Validation_Landing_Files
+    - name: act_5_3_dmp_poc_ods_vehicle_master
+      type: dts_batch
+      source: WORKSPACE
+      engineType: dts_batch
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/09_Execute_CHILD_Extract_And_Stage/5_3_dmp_poc_ods.vehicle_master.copydata.json
+      position:
+        x: -30
+        'y': -300
+      retryPolicy:
+        maxRetries: 3
+        minRetryIntervalSeconds: 5
+    - name: act_5_4_dmp_poc_ods_customer_master
+      type: dts_batch
+      source: WORKSPACE
+      engineType: dts_batch
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/09_Execute_CHILD_Extract_And_Stage/5_4_dmp_poc_ods.customer_master.copydata.json
+      position:
+        x: -40
+        'y': -440
+      retryPolicy:
+        maxRetries: 3
+        minRetryIntervalSeconds: 5
+    - name: act_2_0_Copy_SQL_to_Blob_ServiceSignal
+      type: execute_pipeline
+      pipelineName: delta_or_full_load
+      pipelineId: delta_or_full_load
+      pipelineParameterValues:
+        load_DATE: '{{pipeline.params.load_DATE}}'
+        ifFullload: '{{pipeline.params.ifFullload}}'
+      waitingSuccess: true
+      bizDate: ${DATETIME}
+      position:
+        x: -30
+        'y': -160
+      parameterValues: {}
+  schedulingResourceGroupName: dmp_schedule
+  schedulingResourceGroupId: 1514
+  dependsOn:
+    pipelines: []
+    self:
+      enabled: false
+  parameters:
+    - name: ifFullload
+      default: 'true'
+    - name: load_DATE
+      default: ${DATE}

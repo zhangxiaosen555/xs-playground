@@ -1,0 +1,200 @@
+apiVersion: newide.studio.dataleap.volc/v1
+kind: Pipeline
+metadata:
+  name: 10_Execute_CHILD_Transform_And_Curate
+spec:
+  displayName: 10_Execute_CHILD_Transform_And_Curate
+  description: ''
+  runAs: AssumedRole/135595346
+  trigger:
+    type: MANUAL
+    frequency: daily
+    cronExpression: 00 00 * * *
+    priority: d4
+  activities:
+    - name: DBX_Notebook_Transform
+      type: notebook
+      source: WORKSPACE
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/10_Execute_CHILD_Transform_And_Curate//ETL_Main.ipynb
+      kernelType: emr_serverless_spark_python
+      engineQueue: dmp_emr_queue-Default
+      computingResourceGroupName: dmp_compute
+      sparkConf:
+        - key: serverless.spark.access.key
+          value: '{{ak}}'
+        - key: serverless.spark.secret.key
+          value: '{{sk}}'
+      executeParam:
+        image:
+          imageUrl: >-
+            emr-serverless-online-cn-beijing.cr.volces.com/emr-serverless-spark/spark:3.5.1-py3.12-ubuntu20.04-802
+        cpuCores: 1
+        memoryMb: 4096
+      parameters: []
+      resources: []
+      position:
+        x: -560
+        'y': -30
+      computingResourceGroupId: 1513
+      description: done
+      dependsOn:
+        activities:
+          - name: tmp_insert_activity
+    - name: Copy_Hive_to_SQL_LeadMart
+      type: dts_batch
+      source: WORKSPACE
+      engineType: dts_batch
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/10_Execute_CHILD_Transform_And_Curate//Copy_Hive_to_SQL_LeadMart.copydata.json
+      position:
+        x: -270
+        'y': -30
+      dependsOn:
+        activities:
+          - name: DBX_Notebook_Transform
+      description: 不确定有没有问题
+    - name: Validation_LeadMart_NotEmpty
+      type: notebook
+      source: WORKSPACE
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/10_Execute_CHILD_Transform_And_Curate/Validation_LeadMart_NotEmpty.ipynb
+      kernelType: emr_serverless_spark_python
+      engineQueue: dmp_emr_queue-Default
+      computingResourceGroupName: dmp_compute
+      sparkConf:
+        - key: serverless.spark.access.key
+          value: '{{ak}}'
+        - key: serverless.spark.secret.key
+          value: '{{sk}}'
+      executeParam:
+        image:
+          imageUrl: >-
+            emr-serverless-online-cn-beijing.cr.volces.com/emr-serverless-spark/spark:3.5.1-py3.12-ubuntu20.04-802
+        cpuCores: 1
+        memoryMb: 4096
+      parameters: []
+      resources: []
+      position:
+        x: 30
+        'y': -30
+      dependsOn:
+        activities:
+          - name: Copy_Hive_to_SQL_LeadMart
+      computingResourceGroupId: 1513
+      description: done
+      parameterValues: {}
+    - name: DBX_Notebook_Transform_add_partitions
+      type: notebook
+      source: WORKSPACE
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/10_Execute_CHILD_Transform_And_Curate//DBX_Notebook_Transform_add_partitions.ipynb
+      kernelType: emr_serverless_spark_python
+      engineQueue: dmp_emr_queue-Default
+      computingResourceGroupName: dmp_compute
+      computingResourceGroupId: 1513
+      sparkConf:
+        - key: serverless.spark.access.key
+          value: '{{ak}}'
+        - key: serverless.spark.secret.key
+          value: '{{sk}}'
+      executeParam:
+        image:
+          imageUrl: >-
+            emr-serverless-online-cn-beijing.cr.volces.com/emr-serverless-spark/spark:3.5.1-py3.12-ubuntu20.04-802
+        cpuCores: 1
+        memoryMb: 4096
+      parameters: []
+      resources: []
+      position:
+        x: -270
+        'y': -200
+      dependsOn:
+        activities:
+          - name: DBX_Notebook_Transform
+      description: done
+    - name: Record_LeadMart_RowCount_To_Hive
+      type: notebook
+      source: WORKSPACE
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/10_Execute_CHILD_Transform_And_Curate/Record_LeadMart_RowCount_To_Hive.ipynb
+      kernelType: emr_serverless_spark_python
+      engineQueue: dmp_emr_queue-Default
+      computingResourceGroupName: dmp_compute
+      computingResourceGroupId: 1513
+      sparkConf:
+        - key: serverless.spark.access.key
+          value: '{{ak}}'
+        - key: serverless.spark.secret.key
+          value: '{{sk}}'
+      executeParam:
+        image:
+          imageUrl: >-
+            emr-serverless-online-cn-beijing.cr.volces.com/emr-serverless-spark/spark:3.5.1-py3.12-ubuntu20.04-802
+        cpuCores: 1
+        memoryMb: 4096
+      parameters: []
+      resources: []
+      position:
+        x: 600
+        'y': -30
+      dependsOn:
+        activities:
+          - name: New_Job_1
+      description: 还没起成功kernel 调通
+    - name: New_Job_1
+      type: set_variable
+      variableType: PIPELINE_INNER
+      variableName: count
+      value:
+        rawValue: '{{activity(Validation_LeadMart_NotEmpty).output.cells["1"]}}'
+        calculateValue:
+          op: ''
+          left: ''
+          right: ''
+      outputVariables:
+        - default: ''
+          name: count
+          description: dbo.lead_mart表的行数
+      position:
+        x: 330
+        'y': -30
+      dependsOn:
+        activities:
+          - name: Validation_LeadMart_NotEmpty
+    - name: tmp_insert_activity
+      type: notebook
+      source: WORKSPACE
+      path: >-
+        /Workspace/DMP/dmp_code/dataleap-dmp/Phase2_PoC/10_Execute_CHILD_Transform_And_Curate/soureCode_DBX_Notebook_Transform.ipynb
+      kernelType: emr_serverless_spark_python
+      engineQueue: dmp_emr_queue-Default
+      computingResourceGroupName: dmp_compute
+      sparkConf:
+        - key: serverless.spark.access.key
+          value: '{{ak}}'
+        - key: serverless.spark.secret.key
+          value: '{{sk}}'
+      executeParam:
+        image:
+          imageUrl: >-
+            emr-serverless-online-cn-beijing.cr.volces.com/emr-serverless-spark/spark:3.5.1-py3.12-ubuntu20.04-802
+        cpuCores: 1
+        memoryMb: 4096
+      parameters: []
+      resources: []
+      position:
+        x: -870
+        'y': -30
+      computingResourceGroupId: 1513
+      description: done
+  schedulingResourceGroupName: dmp_schedule
+  schedulingResourceGroupId: 1514
+  dependsOn:
+    pipelines: []
+    self:
+      enabled: false
+  variables:
+    - name: count
+      default: '-1'
+      description: count值
