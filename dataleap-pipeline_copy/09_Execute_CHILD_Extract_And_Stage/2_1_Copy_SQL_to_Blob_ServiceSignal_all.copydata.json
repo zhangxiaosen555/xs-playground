@@ -1,0 +1,122 @@
+{
+  "configuration": {
+    "reader": {
+      "type": "sql_server",
+      "parameter": {
+        "dataSourceId": 55194,
+        "dataSourceName": "dmp_sqlserver",
+        "schemaName": "dbo",
+        "tableName": "service_signal_stg",
+        "columns": [
+          {
+            "type": "bigint",
+            "name": "signal_id",
+            "extraType": null,
+            "description": null
+          },
+          {
+            "type": "varchar",
+            "name": "vin",
+            "extraType": null,
+            "description": null
+          },
+          {
+            "type": "varchar",
+            "name": "workshop_code",
+            "extraType": null,
+            "description": null
+          },
+          {
+            "type": "int",
+            "name": "mileage",
+            "extraType": null,
+            "description": null
+          },
+          {
+            "type": "varchar",
+            "name": "signal_type",
+            "extraType": null,
+            "description": null
+          },
+          {
+            "type": "datetime",
+            "name": "signal_ts",
+            "extraType": null,
+            "description": null
+          }
+        ],
+        "templateParam": {},
+        "connectorType": "sql_server"
+      }
+    },
+    "writer": {
+      "type": "hive",
+      "parameter": {
+        "dataSourceId": 55079,
+        "dataSourceName": "dmp_hive",
+        "tableName": "tos_service_signal_stg",
+        "writeMode": "overwrite",
+        "partitions": [
+          {
+            "name": "dt",
+            "type": "string",
+            "value": "{{load_DATE}}"
+          }
+        ],
+        "columns": [
+          {
+            "type": "bigint",
+            "name": "signal_id",
+            "extraType": null,
+            "description": "signal_id"
+          },
+          {
+            "type": "string",
+            "name": "vin",
+            "extraType": null,
+            "description": "vin"
+          },
+          {
+            "type": "string",
+            "name": "workshop_code",
+            "extraType": null,
+            "description": "workshop_code"
+          },
+          {
+            "type": "int",
+            "name": "mileage",
+            "extraType": null,
+            "description": "mileage"
+          },
+          {
+            "type": "string",
+            "name": "signal_type",
+            "extraType": null,
+            "description": "signal_type"
+          },
+          {
+            "type": "timestamp",
+            "name": "signal_ts",
+            "extraType": null,
+            "description": "signal_ts"
+          }
+        ],
+        "connectorType": "hive"
+      }
+    },
+    "operator": {
+      "parameter": {
+        "expectedMaxParallelism": 2,
+        "customParameters": {},
+        "extendedParameters": {
+          "mappingType": "table_mapping"
+        },
+        "resourceGroup": {
+          "resourceGroupId": 1749,
+          "resourceGroupName": "dmp_integration",
+          "resourceType": "VCI"
+        }
+      }
+    }
+  }
+}

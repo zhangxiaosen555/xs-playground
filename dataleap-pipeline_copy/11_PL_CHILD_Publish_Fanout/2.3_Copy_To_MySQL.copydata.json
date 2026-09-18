@@ -1,0 +1,139 @@
+{
+  "configuration": {
+    "reader": {
+      "type": "hive",
+      "parameter": {
+        "dataSourceId": 55079,
+        "dataSourceName": "dmp_hive",
+        "tableName": "lead_mart",
+        "readerMode": "hdfs",
+        "multiplePartitionList": [
+          [
+            {
+              "name": "dt",
+              "type": "string",
+              "value": "${DATE}"
+            }
+          ]
+        ],
+        "columns": [
+          {
+            "type": "bigint",
+            "name": "lead_id",
+            "extraType": null,
+            "description": "线索唯一ID"
+          },
+          {
+            "type": "varchar(17)",
+            "name": "vin",
+            "extraType": null,
+            "description": "车辆VIN"
+          },
+          {
+            "type": "varchar(20)",
+            "name": "dealer_code",
+            "extraType": null,
+            "description": "派发经销商代码"
+          },
+          {
+            "type": "varchar(50)",
+            "name": "lead_type",
+            "extraType": null,
+            "description": "线索业务类型"
+          },
+          {
+            "type": "varchar(20)",
+            "name": "priority",
+            "extraType": null,
+            "description": "优先级"
+          },
+          {
+            "type": "timestamp",
+            "name": "created_ts",
+            "extraType": null,
+            "description": "线索生成时间"
+          },
+          {
+            "type": "varchar(30)",
+            "name": "status",
+            "extraType": null,
+            "description": "线索当前状态"
+          }
+        ],
+        "templateParam": {},
+        "connectorType": "hive"
+      }
+    },
+    "writer": {
+      "type": "sql_server",
+      "parameter": {
+        "dataSourceId": 55194,
+        "dataSourceName": "dmp_sqlserver",
+        "schemaName": "dbo",
+        "tableName": "lead_mart",
+        "postSqls": "",
+        "preSqls": "",
+        "writeMode": "directlyInsert",
+        "columns": [
+          {
+            "type": "bigint",
+            "name": "lead_id",
+            "extraType": null,
+            "description": null
+          },
+          {
+            "type": "varchar",
+            "name": "vin",
+            "extraType": null,
+            "description": null
+          },
+          {
+            "type": "varchar",
+            "name": "dealer_code",
+            "extraType": null,
+            "description": null
+          },
+          {
+            "type": "varchar",
+            "name": "lead_type",
+            "extraType": null,
+            "description": null
+          },
+          {
+            "type": "varchar",
+            "name": "priority",
+            "extraType": null,
+            "description": null
+          },
+          {
+            "type": "datetime",
+            "name": "created_ts",
+            "extraType": null,
+            "description": null
+          },
+          {
+            "type": "varchar",
+            "name": "status",
+            "extraType": null,
+            "description": null
+          }
+        ],
+        "connectorType": "sql_server"
+      }
+    },
+    "operator": {
+      "parameter": {
+        "expectedMaxParallelism": 1,
+        "customParameters": {},
+        "extendedParameters": {
+          "mappingType": "table_mapping"
+        },
+        "resourceGroup": {
+          "resourceGroupId": 1749,
+          "resourceGroupName": "dmp_integration",
+          "resourceType": "VCI"
+        }
+      }
+    }
+  }
+}

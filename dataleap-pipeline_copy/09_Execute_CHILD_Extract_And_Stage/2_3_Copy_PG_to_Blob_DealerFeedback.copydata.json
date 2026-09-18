@@ -1,0 +1,89 @@
+{
+  "configuration": {
+    "reader": {
+      "type": "pg",
+      "parameter": {
+        "dataSourceId": 55190,
+        "dataSourceName": "dmp_pg",
+        "tableSchema": "public",
+        "tableName": "dealer_feedback",
+        "splitKeys": [
+          "lead_id"
+        ],
+        "columns": [
+          {
+            "type": "int8",
+            "name": "lead_id",
+            "extraType": null,
+            "description": null
+          },
+          {
+            "type": "varchar",
+            "name": "feedback_status",
+            "extraType": null,
+            "description": null
+          },
+          {
+            "type": "timestamp",
+            "name": "feedback_ts",
+            "extraType": null,
+            "description": null
+          }
+        ],
+        "templateParam": {},
+        "connectorType": "pg"
+      }
+    },
+    "writer": {
+      "type": "hive",
+      "parameter": {
+        "dataSourceId": 55079,
+        "dataSourceName": "dmp_hive",
+        "tableName": "tos_dealer_feedback",
+        "writeMode": "overwrite",
+        "partitions": [
+          {
+            "name": "dt",
+            "type": "string",
+            "value": "{{load_DATE}}"
+          }
+        ],
+        "columns": [
+          {
+            "type": "bigint",
+            "name": "lead_id",
+            "extraType": null,
+            "description": "lead_id"
+          },
+          {
+            "type": "string",
+            "name": "feedback_status",
+            "extraType": null,
+            "description": "feedback_status"
+          },
+          {
+            "type": "timestamp",
+            "name": "feedback_ts",
+            "extraType": null,
+            "description": "feedback_ts"
+          }
+        ],
+        "connectorType": "hive"
+      }
+    },
+    "operator": {
+      "parameter": {
+        "expectedMaxParallelism": 2,
+        "customParameters": {},
+        "extendedParameters": {
+          "mappingType": "table_mapping"
+        },
+        "resourceGroup": {
+          "resourceGroupId": 1749,
+          "resourceGroupName": "dmp_integration",
+          "resourceType": "VCI"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "configuration": {
+    "reader": {
+      "type": "hive",
+      "parameter": {
+        "dataSourceId": 55079,
+        "dataSourceName": "dmp_hive",
+        "tableName": "lead_fact",
+        "readerMode": "hdfs",
+        "multiplePartitionList": [
+          [
+            {
+              "name": "dt",
+              "type": "string",
+              "value": "${DATE}"
+            }
+          ]
+        ],
+        "columns": [],
+        "templateParam": {},
+        "connectorType": "hive"
+      }
+    },
+    "writer": {
+      "type": "pg",
+      "parameter": {
+        "dataSourceId": 55190,
+        "dataSourceName": "dmp_pg",
+        "tableSchema": "public",
+        "tableName": "",
+        "postSqls": "",
+        "preSqls": "",
+        "writeMode": "directlyInsert",
+        "columns": [],
+        "connectorType": "pg"
+      }
+    },
+    "operator": {
+      "parameter": {
+        "expectedMaxParallelism": 1,
+        "customParameters": {},
+        "extendedParameters": {
+          "tableNameMappingRules": [
+            {
+              "sourceName": "${src_table_name}",
+              "targetName": "${src_table_name}_depatch_queue"
+            }
+          ],
+          "tableMappingStrategy": "prefer_existing_else_create",
+          "columnMappingMode": "name_match",
+          "nameMatchRule": "ignore_case",
+          "onColumnMismatch": "ignore",
+          "tableName": "lead_fact",
+          "mappingType": "dynamic_mapping"
+        },
+        "resourceGroup": {
+          "resourceGroupId": 1749,
+          "resourceGroupName": "dmp_integration",
+          "resourceType": "VCI"
+        }
+      }
+    }
+  }
+}
