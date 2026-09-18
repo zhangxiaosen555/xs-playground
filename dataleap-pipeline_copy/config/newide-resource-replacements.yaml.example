@@ -1,0 +1,36 @@
+version: 1
+
+# 只有 DTS Activity 使用绝对 Workspace path 且无法唯一推断本地文件时才需要。
+# workspacePathPrefix: /Workspace/Account/1234/project
+
+replacements:
+  # 所有配置项静态上都可省略；只有输入里实际存在对应字段时才动态必填。
+  runAs: User/9000
+
+  # 可省略；省略时使用上面的完整 runAs。目标必须是以下三种完整身份之一：
+  # Account、User、AssumedRole 的 <数字> 或 <名称>-<数字> 完整身份段。
+  # pathIdentity: User/example-9000
+
+  schedulingResourceGroup:
+    id: 200
+    name: 新环境调度资源组
+
+  computingResourceGroup:
+    id: 300
+    name: 新环境计算资源组
+
+  integrationResourceGroup:
+    id: 400
+    name: 新环境集成资源组
+
+  # 仅当被引用的 *.copydata.json 使用 dataSourceId 时提供旧 ID 到新 ID 的映射。
+  dataSourceIdMap:
+    "1001": 2001
+    "1002": 2002
+
+  emrServerless:
+    # 同时替换源文件里已有的 engineId 和 engineCluster。
+    engineCluster: serverless-new
+    queue: queue-new
+
+# 脚本不会增加缺失字段，也不会修改 engineType、kernelType、resourceType 等类型字段。
